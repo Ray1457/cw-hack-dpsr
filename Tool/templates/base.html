@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %} {% endblock %}</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Ionicons for icons -->
+    <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+    
+    <style>
+        /* Use url_for for static file paths */
+        @font-face {
+            font-family: 'Hotalie';
+            src: url('{{ url_for('static', filename='font/Hotalie.ttf') }}') format('truetype');
+        }
+        @font-face {
+            font-family: 'CloisterBlack';
+            src: url('{{ url_for('static', filename='font/CloisterBlack.ttf') }}') format('truetype');
+        }
+        @font-face {
+            font-family: 'Artifact';
+            src: url('{{ url_for('static', filename='font/Artifact.otf') }}') format('truetype');
+        }
+        @font-face {
+            font-family: 'Fontdinerdotcom';
+            src: url('{{ url_for('static', filename='font/Fontdinerdotcom.ttf') }}') format('truetype');
+        }
+        @font-face {
+            font-family: 'Gregean Bush';
+            src: url('{{ url_for('static', filename='font/gregean-brush.regular.ttf') }}') format('truetype');
+        }
+
+        /* Classes for fonts */
+        .font-hotalie {
+            font-family: 'Hotalie', cursive;
+        }
+        .font-cloister {
+            font-family: 'CloisterBlack', cursive;
+        }
+        .font-artifact {
+            font-family: 'Artifact', cursive;
+        }
+        .font-fontdinerdotcom {
+            font-family: 'Fontdinerdotcom', cursive;
+        }
+        .font-gregeanbush {
+            font-family: 'Gregean Bush', cursive;
+        }
+
+        /* Image and icon settings */
+        img {
+            -webkit-user-select: none; /* For Safari */
+            -moz-user-select: none;    /* For Firefox */
+            -ms-user-select: none;     /* For Internet Explorer/Edge */
+            user-select: none;         /* Standard */
+        }
+
+        ion-icon {
+            -webkit-user-select: none; /* For Safari */
+            -moz-user-select: none;    /* For Firefox */
+            -ms-user-select: none;     /* For Internet Explorer/Edge */
+            user-select: none;         /* Standard */
+        }
+    </style>
+</head>
+<body class="bg-[#4b2f07] min-h-screen font-gregeanbush relative overflow-x-hidden">
+    
+    <!-- Navigation Bar -->
+    <nav class="relative z-[1000] md:top-6 w-full">
+        <div class="hidden md:flex justify-end space-x-1 text-xl lg:text-2xl absolute right-6">
+            <a href="{{ url_for('home') }}" class="text-white hover:text-gray-300 px-4 py-2">Home</a>
+            {% if current_user.is_authenticated %}
+            <a href="{{url_for('play')}}" class="text-white hover:text-gray-300 px-4 py-2">Play</a>
+            <a href="{{url_for('logout')}}" class="text-white hover:text-gray-300 px-4 py-2">Logout</a>
+            <a href="{{ url_for('profile ')}}" class="text-white hover:text-gray-300 px-4 py-2"><ion-icon name="person-circle-outline"></ion-icon></a>
+            {% else %}
+            <a href="{{url_for('login')}}" class="text-white hover:text-gray-300 px-4 py-2">Login</a>
+            <a href="{{ url_for('register')}}" class="text-white hover:text-gray-300 px-4 py-2">Register</a>
+            {% endif %}
+        </div>
+
+        <div class="md:hidden flex justify-end absolute right-2 top-8">
+            <button id="menuBtn" class="text-white p-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+            </button>
+        </div>
+
+        <!-- Mobile Menu -->
+        <div id="mobileMenu" class="hidden md:hidden absolute right-2 top-16 w-48 bg-black/80 rounded-lg">
+            <div class="flex flex-col p-4 space-y-4">
+                <a href="{{ url_for('home') }}" class="text-white hover:text-gray-300 px-4 py-2">Home</a>
+            {% if current_user.is_authenticated %}
+            <a href="{{url_for('play')}}" class="text-white hover:text-gray-300 px-4 py-2">Play</a>
+            <a href="{{url_for('logout')}}" class="text-white hover:text-gray-300 px-4 py-2">Logout</a>
+            <a href="{{ url_for('profile ')}}" class="text-white hover:text-gray-300 px-4 py-2"><ion-icon name="person-circle-outline"></ion-icon></a>
+            {% else %}
+            <a href="{{url_for('login')}}" class="text-white hover:text-gray-300 px-4 py-2">Login</a>
+            <a href="{{ url_for('register')}}" class="text-white hover:text-gray-300 px-4 py-2">Register</a>
+            {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <!-- Content Block for Jinja -->
+    {% block content %}
+    {% endblock %}
+
+    {% if current_user.is_authenticated and request.endpoint not in ['home', 'login' , 'register', 'vid_multi', 'vid_single'] %}
+
+    <footer class="fixed bottom-4 left-4 bg-no-repeat bg-contain z-[100]" style="background-image: url('{{ url_for('static', filename='img/assets/gems_box.png') }}'); width: 150px; height: 50px; background-size: 100% 100%;">
+        <a href="">
+            <div class="flex items-center justify-center h-full mt-1">
+                <p class="font-semibold text-white">Aura</p>
+                <img src="{{ url_for('static', filename='img/assets/gems.png') }}" class="w-6 h-6 mr-2">
+                <span class="text-xl text-white hatolie">
+                    {{ current_user.gems }}
+                    <ion-icon name="add-circle-outline" class=""></ion-icon>
+                </span>
+            </div>
+        </a>
+    </footer>
+    
+
+    {% endif %}
+    
+
+    <!-- Flash Message Alert -->
+    <div id="flashAlert" class="fixed top-10 left-1/2 transform -translate-x-1/2 bg-yellow-500 text-black font-bold text-xl px-6 py-4 rounded-lg shadow-lg z-50 hidden">
+        <span id="flashMessageText"></span>
+        <button onclick="closeFlashAlert()" class="ml-4 text-black font-bold">&times;</button>
+    </div>
+
+    <script>
+        // Toggle mobile menu
+        const menuBtn = document.getElementById('menuBtn');
+        const mobileMenu = document.getElementById('mobileMenu');
+        
+        menuBtn.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+        });
+
+        // Flash Message Display
+        function showFlashMessage(message) {
+            const flashAlert = document.getElementById('flashAlert');
+            const flashMessageText = document.getElementById('flashMessageText');
+            flashMessageText.innerText = message;
+            flashAlert.classList.remove('hidden');
+            
+            // Hide after 5 seconds
+            setTimeout(() => {
+                flashAlert.classList.add('hidden');
+            }, 5000);
+        }
+
+        function closeFlashAlert() {
+            document.getElementById('flashAlert').classList.add('hidden');
+        }
+
+        // Display flash messages from backend
+        function loadFlashMsgs() {
+        const flashMessages = {{ get_flashed_messages() | tojson | safe }};
+        flashMessages.forEach(message => showFlashMessage(message));
+        }
+        loadFlashMsgs();
+    </script>
+</body>
+</html>

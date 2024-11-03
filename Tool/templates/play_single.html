@@ -1,0 +1,181 @@
+{% extends 'base.html' %}
+
+{% block title %}
+Mystify - Play Single
+{% endblock %}
+
+{% block content %}
+    <style>
+        .clue-card {
+            background: url('{{ url_for('static', filename='img/assets/clue.png') }}') no-repeat center;
+            background-size: contain;
+            aspect-ratio: 1;
+            width: 200px;
+            position: relative;
+            margin: 10px;
+        }
+
+        .clue-gems {
+            background: url('{{ url_for('static', filename='img/assets/gems clue.png') }}') no-repeat center;
+            background-size: contain;
+            width: 200px;
+            position: relative;
+            margin: 10px;
+        }
+
+        .parchment-texture {
+            background: url('{{ url_for('static', filename='img/assets/chat bg.png') }}') no-repeat center;
+            background-size: cover;
+        }
+
+        @media (max-width: 768px) {
+            .clue-card {
+                width: 150px;
+            }
+        }
+    </style>
+
+    <div class="bg-[#3D2213] min-h-screen flex flex-col justify-center p-4 md:p-6 lg:p-8">
+        <!-- Clues Grid Layout -->
+        <div class="flex flex-col sm:flex-row justify-center gap-8 sm:gap-4 md:gap-8 lg:gap-16 mb-8 sm:mb-4 md:mb-4 lg:mb-">
+            <!-- Clues Display -->
+            {% for i in range(1, 4) %}
+                <button class="clue-dialog-btn" data-dialog="dialog{{ i }}">
+                    <div class="w-full sm:w-48 md:w-56 lg:w-64 h-80 sm:h-48 md:h-56 lg:h-64 relative">
+                        <div class="clue-card clue-free cursor-pointer"></div>
+                    </div>
+                </button>
+            {% endfor %}
+        </div>
+
+        <div class="flex flex-col sm:flex-row justify-center gap-8 sm:gap-4 md:gap-8 lg:gap-16 mb-8 sm:mb-4 md:mb-8 lg:mb-16">
+            {% for i in range(4, 6) %}
+                <button class="clue-dialog-btn" data-dialog="dialog{{ i }}">
+                    <div class="w-full sm:w-48 md:w-56 lg:w-64 h-80 sm:h-48 md:h-56 lg:h-64 relative">
+                        <div class="clue-card clue-gems cursor-pointer"></div>
+                    </div>
+                </button>
+            {% endfor %}
+        </div>
+
+        <!-- Answer Input Section -->
+        <div class="flex flex-col sm:flex-row justify-center items-center gap-4 px-4 sm:px-0">
+            <div class="relative w-full sm:w-[400px] md:w-[500px] lg:w-[600px]">
+                <input
+                    type="text"
+                    placeholder="Enter Correct Answer"
+                    class="w-full py-2 sm:py-3 px-4 sm:px-6 bg-[#F5E6D3] border-2 border-[#3D2213] text-[#3D2213] placeholder-[#3D2213] rounded-lg focus:outline-none"
+                    id="answer-input"
+                />
+            </div>
+            <button class="w-full sm:w-auto bg-[#CD853F] text-white px-6 sm:px-8 py-2 sm:py-3 rounded-full hover:bg-[#A0522D]" id="submit-answer">
+                Submit
+            </button>
+        </div>
+    </div>
+
+    <!-- Dialogs for Clues -->
+    {% for i in range(1, 6) %}
+        <div id="dialog{{ i }}" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center">
+            <div class="bg-white p-6 rounded-lg max-w-md w-full m-4">
+                <h2 class="text-xl font-bold mb-4">Clue #{{ i }}</h2>
+                <p id="clue-text-{{ i }}" class="mb-4">Clue content will appear here</p>
+                <button onclick="closeDialog('dialog{{ i }}')" class="w-full bg-[#8b7355] text-white py-2 px-4 rounded-lg hover:bg-[#8b7355]/90">Close</button>
+            </div>
+        </div>
+    {% endfor %}
+
+<script>
+    const caseId = '{{ case.id }}'; // Ensure `case.id` is available when rendering this template
+
+    // Function to open dialog
+    function openDialog(dialogId) {
+        document.getElementById(dialogId).style.display = 'flex';
+    }
+
+    // Function to close dialog
+    function closeDialog(dialogId) {
+        document.getElementById(dialogId).style.display = 'none';
+    }
+
+    // AJAX to check answer
+    function checkAnswer() {
+        const answer = $('#answer-input').val().trim();
+        if (answer) {
+            $.ajax({
+                type: 'POST',
+                url: '/check-ans',
+                contentType: 'application/json',
+                data: JSON.stringify({ case_id: caseId, answer: answer }),
+                success: function(response) {
+                    $('#answer-input').val(''); // Clear the input field
+                    if (response.status === "success") {
+                        showFlashMessage(`Congratulations! You gained ${response.reward} aura`);
+                    }
+                    else {
+                        showFlashMessage(`Wrong answer`);
+                    }
+                },
+                error: function(jqXHR) {
+                    const response = jqXHR.responseJSON;
+                    alert(response.message || "An error occurred while checking the answer.");
+                }
+            });
+        } else {
+            showFlashMessage("Please enter an answer.");
+        }
+    }
+
+    // Fetch and display clues
+    function fetchClue(clueNo) {
+        $.ajax({
+            type: 'POST',
+            url: '/get-clue',
+            data: {
+                case_id: caseId,
+                clue_no: clueNo,
+            },
+            success: function(response) {
+                // Display fetched clue content in the corresponding dialog
+                const dialogContent = document.querySelector(`#dialog${clueNo} p`);
+                if (dialogContent) {
+                    dialogContent.textContent = response.clue;
+                }
+
+            },
+            error: function(jqXHR, textStatus, errorThrown) {
+                const response = jqXHR.responseJSON;
+                showFlashMessage(response.error);
+            }
+        });
+    }
+
+    $(document).ready(function() {
+        // Attach click listeners to clue buttons
+        $('.clue-dialog-btn').on('click', function() {
+            const dialogId = $(this).data('dialog');
+            const clueNo = parseInt(dialogId.replace('dialog', ''));
+            fetchClue(clueNo); // Fetch and display clue
+            openDialog(dialogId); // Open dialog
+        });
+
+        // Close dialog when clicking outside
+        $('.fixed').on('click', function(e) {
+            if (e.target === this) {
+                $(this).hide();
+            }
+        });
+
+        // Close dialog with Escape key
+        $(document).on('keydown', function(e) {
+            if (e.key === 'Escape') {
+                $('.fixed').hide();
+            }
+        });
+
+        // Event listener for answer submission
+        $('#submit-answer').on('click', checkAnswer);
+    });
+</script>
+
+{% endblock %}

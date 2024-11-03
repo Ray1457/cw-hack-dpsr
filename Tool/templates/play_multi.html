@@ -1,0 +1,339 @@
+{% extends 'base.html' %}
+
+{% block title %}
+Mystify - Play Multiplayer
+{% endblock %}
+
+{% block content %}
+    <style>
+        .message {
+            max-width: 80%;
+            margin-block: 8px;
+            padding: 12px;
+            border-radius: 10px;
+            word-wrap: break-word;
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeIn 0.3s ease forwards;
+        }
+        .message {
+            background-color: rgba(255, 255, 255, 0.9);
+            color: #333;
+            margin-right: auto;
+        }
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .clue-card {
+            background: url('{{ url_for('static', filename='img/assets/clue.png') }}') no-repeat center;
+            background-size: contain;
+            aspect-ratio: 1;
+            width: 200px;
+            position: relative;
+            margin: 10px;
+        }
+
+        .clue-gems {
+            background: url('{{ url_for('static', filename='img/assets/gems clue.png') }}') no-repeat center;
+            background-size: contain;
+            width: 200px;
+            position: relative;
+            margin: 10px;
+        }
+
+        .parchment-texture {
+            background: url('{{ url_for('static', filename='img/assets/chat bg.png') }}') no-repeat center;
+            background-size: cover;
+        }
+
+        @media (max-width: 768px) {
+            .clue-card {
+                width: 150px;
+            }
+        }
+    </style>
+
+    <div class="container mx-auto p-4">
+        <!-- Main Content -->
+        <div class="flex flex-col min-h-[80vh]">
+            <div class="parchment-texture flex items-center justify-center mt-16">
+                <div class="max-w-2xl w-full flex-grow mb-4 rounded-lg p-4 min-h-[400px] relative">
+                    <div id="messages" class="max-h-[50vh] overflow-y-auto mx-auto flex flex-col mb-24 overflow-x-hidden">
+                        {% for msg in room.messages %}
+                            {% if msg.user and msg.content %}
+                                <div class="message {% if msg.user.username == current_user.username %}sent{% else %}received{% endif %}">
+                                    <strong>{{ msg.user.username }}</strong>: {{ msg.content }}
+                                </div>
+                            {% else %}
+                                <div class="message received">
+                                    <strong>Unknown</strong>: Message not available
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                    <div class="bg-[#8b7355]/80 rounded-lg p-3 flex items-center gap-2 mt-auto mx-auto max-w-2xl absolute bottom-4 w-full left-1/2 -translate-x-1/2">
+                        <input id="message-input" type="text" placeholder="Enter your message" class="w-full bg-transparent text-white placeholder-gray-300 focus:outline-none">
+                        <button id="send-message" class="p-2">
+                            <ion-icon name="send-outline" class="text-white text-2xl"></ion-icon>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Clues Grid -->
+            <div class="flex flex-wrap w-full items-center justify-center">
+                <button class="clue-dialog-btn"><div class="clue-card clue-free cursor-pointer"></div></button>
+                <button class="clue-dialog-btn"><div class="clue-card clue-free cursor-pointer"></div></button>
+                <button class="clue-dialog-btn"><div class="clue-card clue-free cursor-pointer"></div></button>
+                <button class="clue-dialog-btn"><div class="clue-card clue-gems cursor-pointer"></div></button>
+                <button class="clue-dialog-btn"><div class="clue-card clue-gems cursor-pointer"></div></button>
+            </div>
+        </div>
+    </div>
+    <div class="input-container max-w-2xl mx-auto m-4">
+        <div class="flex gap-4 items-center">
+            <input 
+                type="text"  id="ans-input"
+                placeholder="Enter Correct Answer" 
+                class="flex-grow bg-[#8b7355]/80 text-white placeholder-gray-300 p-3 rounded-lg focus:outline-none"
+            >
+            <button class="bg-[#cd7f32] text-white px-6 py-3 rounded-lg" onclick="checkAnswer()">
+                Submit
+            </button>
+        </div>
+    </div>
+
+
+    <div id="dialog1" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center">
+        <div class="bg-white p-6 rounded-lg max-w-md w-full m-4">
+            <h2 class="text-xl font-bold mb-4">Clue #1</h2>
+            <p class="mb-4">First clue content will appear here</p>
+            <button onclick="closeDialog('dialog1')" class="w-full bg-[#8b7355] text-white py-2 px-4 rounded-lg hover:bg-[#8b7355]/90">Close</button>
+        </div>
+    </div>
+    
+    <div id="dialog2" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center">
+        <div class="bg-white p-6 rounded-lg max-w-md w-full m-4">
+            <h2 class="text-xl font-bold mb-4">Clue #2</h2>
+            <p class="mb-4">Second clue content will appear here</p>
+            <button onclick="closeDialog('dialog2')" class="w-full bg-[#8b7355] text-white py-2 px-4 rounded-lg hover:bg-[#8b7355]/90">Close</button>
+        </div>
+    </div>
+    
+    <div id="dialog3" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center">
+        <div class="bg-white p-6 rounded-lg max-w-md w-full m-4">
+            <h2 class="text-xl font-bold mb-4">Clue #3</h2>
+            <p class="mb-4">Third clue content will appear here</p>
+            <button onclick="closeDialog('dialog3')" class="w-full bg-[#8b7355] text-white py-2 px-4 rounded-lg hover:bg-[#8b7355]/90">Close</button>
+        </div>
+    </div>
+    
+    <div id="dialog4" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center">
+        <div class="bg-white p-6 rounded-lg max-w-md w-full m-4">
+            <h2 class="text-xl font-bold mb-4">Gems Clue #1</h2>
+            <p class="mb-4">First gems clue content will appear here</p>
+            <button onclick="closeDialog('dialog4')" class="w-full bg-[#8b7355] text-white py-2 px-4 rounded-lg hover:bg-[#8b7355]/90">Close</button>
+        </div>
+    </div>
+    
+    <div id="dialog5" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center">
+        <div class="bg-white p-6 rounded-lg max-w-md w-full m-4">
+            <h2 class="text-xl font-bold mb-4">Gems Clue #2</h2>
+            <p class="mb-4">Second gems clue content will appear here</p>
+            <button onclick="closeDialog('dialog5')" class="w-full bg-[#8b7355] text-white py-2 px-4 rounded-lg hover:bg-[#8b7355]/90">Close</button>
+        </div>
+    </div>
+    
+    <script>
+        // Add this to your existing script section
+        function openDialog(dialogId) {
+            document.getElementById(dialogId).style.display = 'flex';
+        }
+    
+        function closeDialog(dialogId) {
+            document.getElementById(dialogId).style.display = 'none';
+        }
+    
+        // Modify the click handlers in your existing ready function
+        $(document).ready(function() {
+            $('.clue-dialog-btn').each(function(index) {
+                $(this).on('click', function() {
+                    const dialogId = `dialog${index + 1}`;
+                    openDialog(dialogId);
+                });
+            });
+    
+            // Close dialog when clicking outside
+            $('.fixed').on('click', function(e) {
+                if (e.target === this) {
+                    $(this).hide();
+                }
+            });
+    
+            // Close dialog with Escape key
+            $(document).on('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    $('.fixed').hide();
+                }
+            });
+        });
+    </script>
+
+    <script>
+        const socket = io();
+        const roomCode = '{{ room.room_code }}'; // Get the room code from the server
+
+        // Join the room
+        socket.emit('join', { room: roomCode });
+
+        // Handle incoming messages
+        socket.on('message', function (data) {
+
+            if (data.user)  {
+            $('#messages').append(`<div class="message"><strong>${data.user}</strong>: ${data.message}</div>`);
+            // Auto-scroll to the latest message
+            const messageDiv = document.getElementById('messages');
+            messageDiv.scrollTop = messageDiv.scrollHeight;
+            }
+        });
+
+        // Send a message
+        $('#send-message').on('click', function () {
+            const message = $('#message-input').val();
+            if (message) {
+                socket.emit('message', { room: roomCode, message: message });
+                $('#message-input').val(''); // Clear the input
+            }
+        });
+
+        // Submit message when pressing "Enter"
+        $('#message-input').on('keypress', function (e) {
+            if (e.which == 13) {
+                $('#send-message').click();
+            }
+        });
+
+        // Auto-scroll to the bottom of the messages on load to show the latest messages
+        window.onload = function() {
+            const messageDiv = document.getElementById('messages');
+            messageDiv.scrollTop = messageDiv.scrollHeight;
+        };
+
+</script>
+<script>
+    $(document).ready(function() {
+        // Add click listeners to clue cards to fetch clues every time they are clicked
+        $('.clue-dialog-btn').each(function(index) {
+            $(this).on('click', function() {
+                const dialogId = `dialog${index + 1}`;
+                const clueNo = index + 1; // Clue numbers start from 1
+
+                // Fetch the clue before opening the dialog
+                fetchClue(clueNo);
+
+                // Open the dialog after fetching the clue
+                openDialog(dialogId);
+            });
+        });
+
+        // Close dialog when clicking outside
+        $('.fixed').on('click', function(e) {
+            if (e.target === this) {
+                $(this).hide();
+            }
+        });
+
+        // Close dialog with Escape key
+        $(document).on('keydown', function(e) {
+            if (e.key === 'Escape') {
+                $('.fixed').hide();
+            }
+        });
+    });
+
+    // Fetch clue function
+    const caseId = "{{ room.case_id }}";
+    const clan  = "{{ clan.room_code }}";
+    function fetchClue(clueNo) {
+        $.ajax({
+            type: 'POST',
+            url: '/get-clue',
+            data: {
+                case_id: caseId,
+                clue_no: clueNo,
+                clan_code : clan
+            },
+            success: function(response) {
+                // Display fetched clue content in the corresponding dialog
+                const dialogContent = document.querySelector(`#dialog${clueNo} p`);
+                if (dialogContent) {
+                    dialogContent.textContent = response.clue;
+                }
+
+                $('#messages').append(`<div><strong>System</strong>: Clue ${clueNo} has been unlocked </div>`);
+            },
+            error: function(jqXHR, textStatus, errorThrown) {
+                const response = jqXHR.responseJSON;
+                showFlashMessage(response.error);
+            }
+        });
+    }
+ // Assuming you have access to case ID in the room context
+
+    // Function to check answer
+    function checkAnswer() {
+        const answer = $('#ans-input').val().trim();
+        if (answer) {
+            $.ajax({
+                type: 'POST',
+                url: '/check-ans',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    case_id: caseId,
+                    answer: answer
+                }),
+                success: function(response) {
+                    $('#answer-input').val(''); // Clear the input field
+                    if (response.status === "success") {
+                        showFlashMessage(`Congratulations! You gained ${response.reward} aura`);
+                        $('#messages').append(`<div><strong>System</strong>: Correct answer! Everyone has been awarded ${response.reward} aura. This clan will now be deleted </div>`);
+                        
+                    }
+                },
+                error: function(jqXHR) {
+                    const response = jqXHR.responseJSON;
+                    alert(response.message || "An error occurred while checking the answer.");
+                }
+            });
+        } else {
+            alert("Please enter an answer.");
+        }
+    }
+
+    function deleteClan() {
+    const roomCode = clan
+    fetch(`/del/${roomCode}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            window.location.href = "{{ url_for('home') }}";
+            // Optionally, you can add logic here to update the UI
+        }
+    })
+    .catch(error => {
+        console.error("Error deleting clan:", error);
+    });
+}
+
+
+</script>
+
+{% endblock %}
