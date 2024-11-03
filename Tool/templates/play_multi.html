@@ -299,8 +299,13 @@ Mystify - Play Multiplayer
                     $('#answer-input').val(''); // Clear the input field
                     if (response.status === "success") {
                         showFlashMessage(`Congratulations! You gained ${response.reward} aura`);
-                        $('#messages').append(`<div><strong>System</strong>: Correct answer! Everyone has been awarded ${response.reward} aura. This clan will now be deleted </div>`);
+                        $('#messages').append(`<div><strong>System</strong>: Correct answer! Everyone has been awarded ${response.reward} aura. This clan will now be deleted in a few seconds</div>`);
+
+                        setTimeout(deleteClan(), 50000);
                         
+                    }
+                    else {
+                        showFlashMessage(`Wrong Answer`);
                     }
                 },
                 error: function(jqXHR) {

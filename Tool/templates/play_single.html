@@ -111,6 +111,7 @@ Mystify - Play Single
                     $('#answer-input').val(''); // Clear the input field
                     if (response.status === "success") {
                         showFlashMessage(`Congratulations! You gained ${response.reward} aura`);
+                        window.location.href = "{{ url_for('home' )}}"
                     }
                     else {
                         showFlashMessage(`Wrong answer`);
