@@ -111,6 +111,11 @@ def play():
     return render_template('play.html', cases = cases)
 
 
+@app.route('/shop')
+def shop():
+    return render_template('shop.html', key = app.config['STRIPE_PUBLISHABLE_KEY'])
+
+
 # Single-player play route
 @app.route('/play/single/<cid>')
 def play_single(cid):
@@ -406,6 +411,49 @@ def delclan(cc):
     db.session.delete(clan)
     db.session.commit()
     return jsonify({'success' : 'success'})
+
+
+@app.route('/create-checkout-session', methods=['POST'])
+def create_checkout_session():
+    try:
+        product_id = request.get_json().get("product_id")
+        
+        products = {
+            "mystery_medallion": {"name": "Mystery Medallion", "amount": 99900, "reward" : 3000},  # Rs 999
+            "scooby_snacks": {"name": "Shaggy's Scooby Snacks", "amount": 49900, "reward" : 1000}, # Rs 499
+            "spooky_secrets": {"name": "Spooky Secrets Stash", "amount": 129900, "reward" : 5000}  # Rs 1299
+        }
+        
+        product = products.get(product_id)
+        if not product:
+            return jsonify(error=f"Product not found {product_id}"), 400
+
+        session = stripe.checkout.Session.create(
+            ui_mode = 'embedded',
+            line_items=[{
+                'price_data': {
+                    'currency': 'inr',
+                    'product_data': {
+                        'name': product["name"],
+                    },
+                    'unit_amount': product["amount"],
+                },
+                'quantity': 1,
+            }],
+            mode='payment',
+            return_url= url_for('success', _external=True, aura = product['reward'])
+        )
+        return jsonify({'id': session.id, 'client_secret': session.client_secret})
+    except Exception as e:
+        return jsonify(error=str(e)), 500
+
+@app.route('/success/<aura>')
+def success(aura):
+    aura = int(aura)
+    current_user.gems += aura
+    db.session.commit()
+    flash(f'Congatulations! You just gained {aura} aura')
+    return redirect(url_for('shop'))
 
 if __name__ == '__main__':
     socketio.run(app, debug=True)
