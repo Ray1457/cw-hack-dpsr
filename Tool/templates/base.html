@@ -80,6 +80,7 @@
             <a href="{{ url_for('home') }}" class="text-white hover:text-gray-300 px-4 py-2">Home</a>
             {% if current_user.is_authenticated %}
             <a href="{{url_for('play')}}" class="text-white hover:text-gray-300 px-4 py-2">Play</a>
+            <a href="{{url_for('shop')}}" class="text-white hover:text-gray-300 px-4 py-2">Store</a>
             <a href="{{url_for('logout')}}" class="text-white hover:text-gray-300 px-4 py-2">Logout</a>
             <a href="{{ url_for('profile')}}" class="text-white hover:text-gray-300 px-4 py-2"><ion-icon name="person-circle-outline"></ion-icon></a>
             {% else %}
